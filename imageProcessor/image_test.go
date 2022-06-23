@@ -1,6 +1,7 @@
 package imageProcessor
 
 import (
+	"io/fs"
 	"io/ioutil"
 	"reflect"
 	"testing"
@@ -27,4 +28,39 @@ func TestCompare(t *testing.T) {
 			t.Errorf("got %v, wanted %v", got, want)
 		}
 	})
+}
+func benchmarkCompare(image, category string, files []fs.FileInfo, b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		Compare(image, files, category)
+	}
+}
+
+func BenchmarkCompare(b *testing.B) {
+	image := "1d25ea94-4562-4e19-848e-b60f1b58deee.raw"
+	category := "../Bronze"
+	files, err := ioutil.ReadDir(category)
+	if err != nil {
+		b.Fatal(err)
+	}
+	benchmarkCompare(image, category, files, b)
+}
+
+func BenchmarkCompare2(b *testing.B) {
+	image := "0c9ec855-f5ad-4586-bf3b-da489f447219.raw"
+	category := "../Silver"
+	files, err := ioutil.ReadDir(category)
+	if err != nil {
+		b.Fatal(err)
+	}
+	benchmarkCompare(image, category, files, b)
+}
+
+func BenchmarkCompare3(b *testing.B) {
+	image := "0a0f8f44-3b78-4bff-adee-14bc708e4ba7.raw"
+	category := "../gold"
+	files, err := ioutil.ReadDir(category)
+	if err != nil {
+		b.Fatal(err)
+	}
+	benchmarkCompare(image, category, files, b)
 }

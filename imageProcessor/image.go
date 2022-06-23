@@ -3,11 +3,12 @@ package imageProcessor
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"io"
 	"io/fs"
 	"log"
+	"math"
 	"os"
+	"path/filepath"
 	"pixel_challenge/standards"
 	"sort"
 )
@@ -23,16 +24,16 @@ func check(e error) {
 	}
 }
 
-func Compare(image string, imageList []fs.FileInfo, category string) {
+func Compare(image string, imageList []fs.FileInfo, category string) map[string]float64 {
 	result := make(map[string]float64)
 	values := make([]float64, 0)
-
+	absolutePath, _ := filepath.Abs(category)
 	for _, f := range imageList {
 		if f.Name() == image {
 			continue
 		}
 
-		currentImage, err := os.Open(category + f.Name())
+		currentImage, err := os.Open(filepath.Join(absolutePath, f.Name()))
 		check(err)
 		defer currentImage.Close()
 
@@ -42,7 +43,7 @@ func Compare(image string, imageList []fs.FileInfo, category string) {
 		matchingPixels := 0
 		totalPixels := 0
 
-		baseImage, err := os.Open(category + image)
+		baseImage, err := os.Open(filepath.Join(absolutePath, image))
 		check(err)
 		defer baseImage.Close()
 
@@ -80,10 +81,11 @@ func Compare(image string, imageList []fs.FileInfo, category string) {
 		values = append(values, per)
 	}
 	sort.Float64s(values)
-	fmt.Printf("The closest images to %s in %s category are:\n", image, category)
+	top3 := make(map[string]float64)
 	for k, v := range result {
 		if standards.Contains(values[len(values)-3:], v) {
-			fmt.Println(k, fmt.Sprintf("%.4f%%", v))
+			top3[k] = math.Round(v*10000) / 10000
 		}
 	}
+	return top3
 }

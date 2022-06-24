@@ -16,15 +16,15 @@ type BaseImage struct {
 	pixels []byte
 }
 
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
+type ProcessedImage struct {
+	name    string
+	percent float64
 }
 
 func Compare(image string, imageList []fs.FileInfo, category string) map[string]float64 {
 	result := make(map[string]float64)
 	values := make([]float64, 0)
+	messages := make(chan ProcessedImage, len(imageList)-1)
 
 	baseImageBytes := parseFileToBytes(category, image)
 
@@ -32,25 +32,13 @@ func Compare(image string, imageList []fs.FileInfo, category string) map[string]
 		if f.Name() == image {
 			continue
 		}
-		currentImage := parseFileToBytes(category, f.Name())
+		go getPercentMatch(category, f, baseImageBytes, messages)
+	}
 
-		matchingPixels := 0
-		totalPixels := len(currentImage) / 3
-
-		start, end := 0, 3
-
-		for end <= len(currentImage) {
-			if bytes.Equal(baseImageBytes[start:end], currentImage[start:end]) {
-				matchingPixels++
-			}
-			start += 3
-			end += 3
-
-		}
-
-		per := standards.GetPercent(matchingPixels, totalPixels)
-		result[f.Name()] = per
-		values = append(values, per)
+	for i := 0; i < len(imageList)-1; i++ {
+		image := <-messages
+		result[image.name] = image.percent
+		values = append(values, image.percent)
 	}
 	sort.Float64s(values)
 	top3 := make(map[string]float64)
@@ -60,6 +48,30 @@ func Compare(image string, imageList []fs.FileInfo, category string) map[string]
 		}
 	}
 	return top3
+}
+
+func getPercentMatch(category string, f fs.FileInfo, baseImageBytes []byte, messages chan ProcessedImage) {
+	currentImage := parseFileToBytes(category, f.Name())
+
+	matchingPixels := 0
+	totalPixels := len(currentImage) / 3
+
+	start, end := 0, 3
+
+	for end <= len(currentImage) {
+		if bytes.Equal(baseImageBytes[start:end], currentImage[start:end]) {
+			matchingPixels++
+		}
+		start += 3
+		end += 3
+
+	}
+
+	per := standards.GetPercent(matchingPixels, totalPixels)
+	messages <- ProcessedImage{
+		name:    f.Name(),
+		percent: per,
+	}
 }
 
 func parseFileToBytes(category, fileName string) []byte {

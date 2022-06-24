@@ -50,26 +50,26 @@ func TestCompare(t *testing.T) {
 		}
 	})
 
-	//t.Run("Gold dataset", func(t *testing.T) {
-	//
-	//	// Arrange
-	//	image := "0a0f8f44-3b78-4bff-adee-14bc708e4ba7.raw"
-	//	category := "../Gold"
-	//	files, err := ioutil.ReadDir(category)
-	//	if err != nil {
-	//		t.Fatal(err)
-	//	}
-	//	got := Compare(image, files, category)
-	//	want := map[string]float64{
-	//		"70e70084-9e53-4af8-a195-8fcb395aed78.raw": 6.3288,
-	//		"7155ec2a-2e9c-4b78-845a-fdd955d3aa9b.raw": 6.3228,
-	//		"c7f36f26-0b1f-4d1c-ba7c-cc9be0b3eaf0.raw": 6.3216,
-	//	}
-	//
-	//	if !reflect.DeepEqual(got, want) {
-	//		t.Errorf("got %v, wanted %v", got, want)
-	//	}
-	//})
+	t.Run("Gold dataset", func(t *testing.T) {
+
+		// Arrange
+		image := "0a0f8f44-3b78-4bff-adee-14bc708e4ba7.raw"
+		category := "../Gold"
+		files, err := ioutil.ReadDir(category)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := Compare(image, files, category)
+		want := map[string]float64{
+			"70e70084-9e53-4af8-a195-8fcb395aed78.raw": 6.3288,
+			"7155ec2a-2e9c-4b78-845a-fdd955d3aa9b.raw": 6.3228,
+			"c7f36f26-0b1f-4d1c-ba7c-cc9be0b3eaf0.raw": 6.3216,
+		}
+
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("got %v, wanted %v", got, want)
+		}
+	})
 }
 
 func benchmarkCompare(image, category string, files []fs.FileInfo, b *testing.B) {

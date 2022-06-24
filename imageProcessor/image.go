@@ -1,13 +1,11 @@
 package imageProcessor
 
 import (
-	"bufio"
 	"bytes"
-	"io"
 	"io/fs"
+	"io/ioutil"
 	"log"
 	"math"
-	"os"
 	"path/filepath"
 	"pixel_challenge/standards"
 	"sort"
@@ -27,52 +25,26 @@ func check(e error) {
 func Compare(image string, imageList []fs.FileInfo, category string) map[string]float64 {
 	result := make(map[string]float64)
 	values := make([]float64, 0)
-	absolutePath, _ := filepath.Abs(category)
+
+	baseImageBytes := parseFileToBytes(category, image)
+
 	for _, f := range imageList {
 		if f.Name() == image {
 			continue
 		}
-
-		currentImage, err := os.Open(filepath.Join(absolutePath, f.Name()))
-		check(err)
-		defer currentImage.Close()
-
-		currentBytes := make([]byte, 3)
-		currentReader := bufio.NewReader(currentImage)
+		currentImage := parseFileToBytes(category, f.Name())
 
 		matchingPixels := 0
-		totalPixels := 0
+		totalPixels := len(currentImage) / 3
 
-		baseImage, err := os.Open(filepath.Join(absolutePath, image))
-		check(err)
-		defer baseImage.Close()
+		start, end := 0, 3
 
-		baseBytes := make([]byte, 3)
-		baseReader := bufio.NewReader(baseImage)
-
-		for {
-			//_, errCurr := currentReader.Read(currentBytes)
-			_, errCurr := io.ReadFull(currentReader, currentBytes)
-
-			//bytesRead, err := baseReader.Read(baseBytes)
-			bytesRead, err := io.ReadFull(baseReader, baseBytes)
-
-			if bytesRead == 3 {
-				totalPixels++
-			}
-
-			if err != nil || errCurr != nil {
-
-				if err != io.EOF || errCurr != io.EOF {
-
-					log.Fatal(err)
-				}
-
-				break
-			}
-			if bytes.Equal(baseBytes, currentBytes) {
+		for end <= len(currentImage) {
+			if bytes.Equal(baseImageBytes[start:end], currentImage[start:end]) {
 				matchingPixels++
 			}
+			start += 3
+			end += 3
 
 		}
 
@@ -88,4 +60,14 @@ func Compare(image string, imageList []fs.FileInfo, category string) map[string]
 		}
 	}
 	return top3
+}
+
+func parseFileToBytes(category, fileName string) []byte {
+	absolutePath, _ := filepath.Abs(category)
+
+	content, err := ioutil.ReadFile(filepath.Join(absolutePath, fileName))
+	if err != nil {
+		log.Fatal(err)
+	}
+	return content
 }
